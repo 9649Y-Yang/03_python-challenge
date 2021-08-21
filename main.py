@@ -10,22 +10,23 @@ with open(pybank_csv) as csv_file_pybank:
     csv_reader_pybank = csv.reader(csv_file_pybank, delimiter=",")
     # read the header row
     csv_header_pybank = next(csv_reader_pybank)
+    # skip the first row for change of profit/loss in later calculation
+    pybank_first_date = next(csv_reader_pybank)
 
     # Define few variables to hold counts/ total amounts/ average changes/maximum and minimum values
-    # initially set the month counter to 0 for further adding up
-    month_count = 0
-    total_amount = 0
+    # initially set the month counter to 1 as skip the first row of data
+    month_count = 1
+    # add the first row's profit/loss into total_amount
+    total_amount = int(pybank_first_date[1])
     change_value = 0
-    # hard coding to insert the first value for the profit/loss
-    # not sure is there better way to get first row value
-    pre_value = 867884
+    # pre_value = previous value, which is the difference of profit/loss = current month's - previous month's
+    pre_value = int(pybank_first_date[1])
     sum_change_value = 0
     average_change = 0
     max_change = 0
     max_change_date = ""
     min_change = 0
     min_change_date = ""
-
     # Get the data from each row after the header
     for row1 in csv_reader_pybank:
         # to run through each row in csv file, add one to the month counter
@@ -53,7 +54,7 @@ with open(pybank_csv) as csv_file_pybank:
 
     # print the results
     print(f"Financial Analysis")
-    print(f"----------------------------")
+    print(f"----------------------------------------")
     print(f"Total Months: {month_count}")
     print(f"Total: ${total_amount}")
     print(f"Average  Change: ${average_change}")
@@ -64,7 +65,7 @@ with open(pybank_csv) as csv_file_pybank:
     output_path = os.path.join("analysis", "analysis_results.txt")
     analysis_result = open(output_path, "w", newline="")
     analysis_result.write(f"Financial Analysis\n")
-    analysis_result.write(f"----------------------------\n")
+    analysis_result.write(f"----------------------------------------\n")
     analysis_result.write(f"Total Months: {month_count}\n")
     analysis_result.write(f"Total: ${total_amount}\n")
     analysis_result.write(f"Average  Change: ${average_change}\n")
@@ -79,60 +80,44 @@ with open(pypoll_csv) as csv_file_pypoll:
     csv_reader_pypoll = csv.reader(csv_file_pypoll, delimiter=",")
     # read the header row
     csv_header_pypoll = next(csv_reader_pypoll)
-
+    # create an empty dictionary to hold candidate and their votes later
+    candi_dict = {}
+    # initially set the total vote count to 0
     total_vote_count = 0
-    candi_list = []
-    # Again, here what if I don't know the number of candidates?
-    # Is there anyway else I can use to replace this hard coding with this known number list?
-    vote_list = [0, 0, 0, 0]
-    rate_list = [0, 0, 0, 0]
-    winner_vote = 0
-    winner = ""
 
     for row in csv_reader_pypoll:
-        # to count the votes for all candidates
         total_vote_count += 1
-        # if the candidate's name not exist in the candidate list, add the name in
-        if str(row[2]) not in candi_list:
-            candi_list.append(str(row[2]))
-            candi_index = candi_list.index(str(row[2]))
-            vote_list[candi_index] += 1
-        # if the candidate's name already exist, add the vote to the candidate's name
-        # by matching the candidate index in the candidate list
+        # if the candidate's name not exist in the candidate dictionary, add the name in
+        if row[2] not in candi_dict:
+            candi_dict[row[2]] = 1
+        # if the candidate's name already exist, add the vote to the candidate's name by matching the key(row[2])
         else:
-            candi_index = candi_list.index(str(row[2]))
-            vote_list[candi_index] += 1
+            # current_vote = candi_dict[row[2]]
+            # candi_dict[row[2]] = current_vote + 1
+            candi_dict[row[2]] += 1
 
-    # print the results
-    print(f"Election Results")
-    print(f"-------------------------")
+    print("Election Results")
+    print("----------------------------------------")
     print(f"Total Votes: {total_vote_count}")
-    print(f"-------------------------")
-    # Use a for loop here to repeat the calculation of vote percentage for each candidate
-    for i in range(len(candi_list)):
-        rate_list[i] = (int(vote_list[i])/total_vote_count)*100
-        # compare the votes for each candidate and select the highest vote one
-        if int(vote_list[i]) > winner_vote:
-            winner = candi_list[i]
-            winner_vote = int(vote_list[i])
-        print("{}: {:.3f}% ({})".format(str(candi_list[i]), float(str(rate_list[i])), int(vote_list[i])))
-    print(f"-------------------------")
-    print(f"Winner: {winner}")
-    print(f"-------------------------")
+    print("----------------------------------------")
+    # using a for loop here to repeat the calculation of vote percentage for each candidate,
+    # candidate's vote is found by matching their name(key) in dictionary
+    for candidate in candi_dict:
+        print("{}: {:.3f}% ({})".format(str(candidate), float(candi_dict[candidate]/total_vote_count*100), candi_dict[candidate]))
+    print("----------------------------------------")
+    # using the build-in max function to find the maximum vote's candidate
+    # using build-in get function to grab the name of the winner candidate
+    print(f"Winner: {max(candi_dict, key=candi_dict.get)}")
+    print("----------------------------------------")
 
     # export the pypoll analysis results into text file
     analysis_result.write(f"Election Results\n")
     analysis_result.write(f"----------------------------------------\n")
     analysis_result.write(f"Total Votes: {total_vote_count}\n")
     analysis_result.write(f"----------------------------------------\n")
-    for j in range(len(candi_list)):
-        rate_list[j] = (int(vote_list[j])/total_vote_count)*100
-        # compare the votes for each candidate and select the highest vote one
-        if int(vote_list[j]) > winner_vote:
-            winner = candi_list[j]
-            winner_vote = int(vote_list[j])
-        analysis_result.write("{}: {:.3f}% ({})\n".format(str(candi_list[j]), float(str(rate_list[j])), int(vote_list[j])))
+    for candidate in candi_dict:
+        analysis_result.write("{}: {:.3f}% ({})\n".format(str(candidate), float(candi_dict[candidate] / total_vote_count * 100), candi_dict[candidate]))
     analysis_result.write(f"----------------------------------------\n")
-    analysis_result.write(f"Winner: {winner}\n")
+    analysis_result.write(f"Winner: {max(candi_dict, key=candi_dict.get)}\n")
     analysis_result.write(f"----------------------------------------\n")
 
